@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/toast.css" />
+    <link rel="stylesheet" href="css/login.css" />
+    <script src="js/toast.js"></script>
+    <title>SkyLauncher - Login</title>
+  </head>
+  <body>
+    <div class="login-page">
+      <div class="form">
+        <input type="text" placeholder="Email" id="username" />
+        <input type="password" placeholder="Password" id="password" />
+        <button id="login">Login</button>
+      </div>
+    </div>
+    <footer>
+      <button class="btn" id="new">News</button>
+      <button class="btn" id="closebtn">Close</button>
+    </footer>
+    <script>
+      const loginbtn = document.getElementById('login');
+
+      if (localStorage.getItem('username') && localStorage.getItem('password')) {
+        window.api.send('login', {
+          username: localStorage.getItem('username'),
+          password: localStorage.getItem('password')
+        });
+      }
+
+      loginbtn.addEventListener('click', () => {
+        loginbtn.disabled = true;
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (username && password) {
+          window.api.send('login', {
+            username,
+            password
+          });
+          localStorage.setItem('username', username);
+          localStorage.setItem('password', password);
+        } else {
+          loginbtn.disabled = false;
+          iziToast.error({
+            id: 'error',
+            title: 'Error',
+            message: "You didn't provide any credentials",
+            position: 'bottomRight',
+            transitionIn: 'fadeInDown',
+          });
+        }
+      });
+
+      window.api.receive('error', (event, message) => {
+        localStorage.removeItem('username');
+        localStorage.removeItem('password');
+        sessionStorage.clear();
+        iziToast.error({
+          id: 'error',
+          title: 'Error',
+          message: message,
+          position: 'bottomRight',
+          transitionIn: 'fadeInDown',
+        });
+        loginbtn.disabled = false;
+      });
+
+      document.querySelector('#new').addEventListener('click', () => {
+        window.api.send('news');
+      });
+
+      document.querySelector('#new').addEventListener('click', () => {
+        window.api.send('news');
+      });
+
+      document.querySelector('#closebtn').addEventListener('click', () => {
+        window.close();
+      });
+    </script>
+  </body>
+</html>

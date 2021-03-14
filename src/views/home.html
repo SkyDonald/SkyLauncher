@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <link rel="stylesheet" href="css/toast.css" />
+    <link rel="stylesheet" href="css/home.css" />
+    <script src="js/toast.js"></script>
+    <title>SkyLauncher - Home</title>
+  </head>
+  <body>
+    <ul>
+      <li><button id="navSkin">Skin</button></li>
+      <li><button id="navUsername">Username</button></li>
+      <li><button id="options">Settings</button></li>
+      <li style="float: right;"><button id="logout">Logout</button></li>
+      <li style="float: right;">
+        <div class="user">
+          <img src="./assets/steve_face.png" id="avatar" class="avatar" />
+          <p id="username">Unknow User</p>
+        </div>
+      </li>
+    </ul>
+    <div id="settingsModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close">&times;</span>
+          <h2>Settings</h2>
+        </div>
+        <div class="modal-body">
+          <b>RAM :</b>
+          <select id="ram">
+            <option id="ramSelector">1</option>
+          </select>Go
+        </div>
+      </div>
+    </div>
+    <div id="usernameModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close">&times;</span>
+          <h2>Username</h2>
+        </div>
+        <div class="modal-body">
+          <b>Username :</b>
+          <input type="text" style="width: 55%; background: #e4e0e0;" id="newName" /><br />
+          <button class="btn" id="sendUsername">Update Username</button>
+        </div>
+      </div>
+    </div>
+    <div id="skinModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="close">&times;</span>
+          <h2>Skin</h2>
+        </div>
+        <div class="modal-body">
+          <div>
+            <input type="file" id="image_uploads" name="image_uploads" accept=".jpg, .jpeg, .png">
+          </div>
+          <label class="select" for="skinCustomSelect">
+            <select id="skinCustomSelect">
+                <option>slim</option>
+                <option>classic</option>
+            </select>
+            <svg>
+                <use xlink:href="#select-arrow-down"></use>
+            </svg>
+          </label>
+          <svg class="sprites">
+            <symbol id="select-arrow-down" viewbox="0 0 10 6">
+              <polyline points="1 1 5 5 9 1"></polyline>
+            </symbol>
+          </svg><br /><br />
+          <button class="btn" id="sendSkin">Update Skin</button>
+        </div>
+      </div>
+    </div>
+    <section id="news">
+      <section id="welcome">
+        Welcome <b id="username">Unknow User</b><br />
+        <img src="./assets/steve_walk.png" id="skin" class="skin" width="100" height="225" /><br />
+        <label class="select" for="customSelect">
+          <select id="customSelect">
+              <option disabled selected id="version" value="0">Select version</option>
+          </select>
+          <svg>
+              <use xlink:href="#select-arrow-down"></use>
+          </svg>
+        </label>
+        <svg class="sprites">
+          <symbol id="select-arrow-down" viewbox="0 0 10 6">
+            <polyline points="1 1 5 5 9 1"></polyline>
+          </symbol>
+        </svg><br /><br />
+        <button class="btn" id="playbtn">PLAY</button>
+        <p id="text-download" style="display: none;"></p>
+        <div class="progress" style="display: none;">
+          <div class="progress-value"></div>
+        </div>
+      </section>
+    </section>
+    <footer>
+      <button class="btn" id="new">News</button>
+      <button class="btn" id="closebtn">Close</button>
+    </footer>
+    <script src="js/index.js"></script>
+    <script>
+      let filePath;
+
+      window.api.receive('userData', (_, user) => {
+        sessionStorage.setItem('user', JSON.stringify(user));
+        document.getElementById('avatar').setAttribute('src', user.imageUrls.face);
+        document.getElementById('skin').setAttribute('src', user.imageUrls.body);
+        document.querySelectorAll('#username').forEach(c => c.innerHTML = user.currentName);
+      });
+
+      if (sessionStorage.getItem('versionsData')) {
+        let versions = JSON.parse(sessionStorage.getItem('versionsData'));
+        let latestVersion = versions.versions.map(v => v.id).indexOf(versions.latest.snapshot);
+        latestVersion = versions.versions[latestVersion];
+        [latestVersion].concat(versions.versions.filter(v => v.type === 'release')).reverse().forEach(v => {
+            const element = document.createElement('option');
+            element.value = v.id;
+            element.innerHTML = `v${v.id}`;
+            document.getElementById('version').insertAdjacentElement('afterend', element);
+          });
+      } else {
+        window.api.receive('versionsData', (_, versions) => {
+          sessionStorage.setItem('versionsData', JSON.stringify(versions));
+          let latestVersion = versions.versions.map(v => v.id).indexOf(versions.latest.snapshot);
+          latestVersion = versions.versions[latestVersion];
+          [latestVersion].concat(versions.versions.filter(v => v.type === 'release')).reverse().forEach(v => {
+            const element = document.createElement('option');
+            element.value = v.id;
+            element.innerHTML = `v${v.id}`;
+            document.getElementById('version').insertAdjacentElement('afterend', element);
+          });
+        });
+      }
+
+      [2, 3, 4, 5, 6, 7, 8].reverse().forEach(n => {
+          const element = document.createElement('option');
+          element.innerHTML = n.toString();
+          if (localStorage.getItem('ram') === n.toString()) {
+            element.selected = true;
+          }
+          document.getElementById('ramSelector').insertAdjacentElement('afterend', element);
+      });
+
+      window.api.receive('download-status', (_, i) => {
+        document.querySelector('#text-download').style.display = '';
+        document.querySelector('.progress').style.display = 'flex';
+        playbtn.disabled = true;
+        const percent = Math.round((i.current * 100) / i.total);
+        document.getElementById('text-download').innerHTML = `Downloading ${i.name.length > 20 ? i.type : i.name} (${percent}%)`;
+        document.querySelector('.progress-value').style.width = `${percent}%`;
+        if (i.current === i.total) {
+          document.querySelector('#text-download').style.display = 'none';
+          document.querySelector('.progress').style.display = 'none';
+          playbtn.disabled = false;
+        }
+      });
+
+      const playbtn = document.getElementById('playbtn');
+      playbtn.addEventListener('click', () => {
+        const versions = JSON.parse(sessionStorage.getItem('versionsData'));
+        const maxRam = document.getElementById('ram').value;
+        let version = document.getElementById('customSelect').value;
+        if (version === 0 || version === '0') {
+          iziToast.error({
+            id: 'error',
+            title: 'Error',
+            message: "Please select a version",
+            position: 'bottomRight',
+            transitionIn: 'fadeInDown',
+          });
+          return;
+        }
+        version = {
+          number: version,
+          type: versions.versions[versions.versions.map(v => v.id).indexOf(version)].type
+        }
+        window.api.send('launch', {
+          version,
+          ram: parseInt(maxRam),
+          username: JSON.parse(sessionStorage.getItem('user')).currentName
+        });
+        playbtn.disabled = true;
+      });
+
+      window.api.receive('info', (_, message) => {
+        if (message.includes('Game started as')) {
+          playbtn.disabled = false;
+        }
+        iziToast.info({
+          id: 'info',
+          title: 'Info',
+          message: message,
+          position: 'bottomRight',
+          transitionIn: 'fadeInDown',
+        });
+      });
+
+      window.api.receive('success', (_, message, un) => {
+        if (message === 'Name changed successfully!' && un) {
+          const sessionUser = JSON.parse(sessionStorage.getItem('user'));
+          sessionUser.currentName = un;
+          sessionStorage.setItem('user', JSON.stringify(sessionUser));
+        }
+        iziToast.success({
+          id: 'success',
+          message: message,
+          position: 'bottomRight',
+          transitionIn: 'fadeInDown',
+        });
+      });
+
+      if (sessionStorage.getItem('user')) {
+        const user = JSON.parse(sessionStorage.getItem('user'));
+        document.getElementById('avatar').setAttribute('src', user.imageUrls.face);
+        document.getElementById('skin').setAttribute('src', user.imageUrls.body);
+        document.querySelectorAll('#username').forEach(c => c.innerHTML = user.currentName);
+      }
+
+      const logoutbtn = document.getElementById('logout');
+
+      logoutbtn.addEventListener('click', () => {
+        localStorage.removeItem('username');
+        localStorage.removeItem('password');
+        sessionStorage.clear();
+        window.api.send('logout');
+      });
+
+      const settingsModal = document.getElementById('settingsModal');
+      const span = document.getElementsByClassName('close')[0];
+      document.getElementById('options').addEventListener('click', () => {
+        settingsModal.style.display = 'block';
+      });
+      span.onclick = function () {
+        settingsModal.style.display = 'none';
+      };
+      window.onclick = function (event) {
+        if (event.target == settingsModal) {
+          settingsModal.style.display = 'none';
+        }
+      };
+
+      const usernameModal = document.getElementById('usernameModal');
+      const usernameClose = document.getElementsByClassName('close')[1];
+      document.getElementById('navUsername').addEventListener('click', () => {
+        usernameModal.style.display = 'block';
+      });
+      usernameClose.onclick = function () {
+        usernameModal.style.display = 'none';
+      };
+      window.onclick = function (event) {
+        if (event.target == usernameModal) {
+          usernameModal.style.display = 'none';
+        }
+      };
+
+      const skinModal = document.getElementById('skinModal');
+      const closeSpan = document.getElementsByClassName('close')[2];
+      document.getElementById('navSkin').addEventListener('click', () => {
+        skinModal.style.display = 'block';
+      });
+      closeSpan.onclick = function () {
+        skinModal.style.display = 'none';
+      };
+      window.onclick = function (event) {
+        if (event.target == skinModal) {
+          skinModal.style.display = 'none';
+        }
+      };
+
+      window.api.receive('error', (_, message) => {
+        iziToast.error({
+          id: 'error',
+          title: 'Error',
+          message: message,
+          position: 'bottomRight',
+          transitionIn: 'fadeInDown',
+        });
+      });
+
+      document.querySelector('#new').addEventListener('click', () => {
+        window.api.send('news');
+      });
+
+      document.querySelector('#closebtn').addEventListener('click', () => {
+        window.close();
+      });
+
+      document.querySelector('#ram').addEventListener('change', (e) => {
+        localStorage.setItem('ram', e.target.value);
+      });
+
+      document.getElementById('sendSkin').addEventListener('click', () => {
+        window.api.send('changeSkin', {
+          filePath,
+          variant: document.getElementById('skinCustomSelect').value
+        });
+      });
+
+      document.getElementById('sendUsername').addEventListener('click', () => {
+        if (!document.getElementById('newName').value || document.getElementById('newName').value.length <= 3) {
+          return iziToast.error({
+            id: 'error',
+            title: 'Error',
+            message: 'Name is invalid (less than 3 characters)',
+            position: 'bottomRight',
+            transitionIn: 'fadeInDown',
+          });
+        }
+        window.api.send('changeUsername', {
+          newName: document.getElementById('newName').value
+        });
+      });
+
+      const input = document.querySelector('input#image_uploads');
+
+      input.addEventListener('change', () => {
+        const curFiles = input.files;
+        if (curFiles.length > 0) {
+          if (validFileType(curFiles[0])) {
+            filePath = curFiles[0].path;
+          } else {
+            alert(`${curFiles[0].name} is not a valid file type`);
+            filePath = null;
+          }
+        }
+      });
+
+      const fileTypes = [
+        'image/jpeg',
+        'image/pjpeg',
+        'image/png',
+        'image/jpg'
+      ];
+
+      function validFileType (file) {
+        for (let i = 0; i < fileTypes.length; i++) {
+          if (file.type === fileTypes[i]) {
+            return true;
+          }
+        }
+        return false;
+      }
+    </script>
+  </body>
+</html>

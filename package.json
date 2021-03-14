@@ -1,0 +1,63 @@
+{
+  "name": "skylauncher",
+  "version": "1.0.0",
+  "description": "A custom launcher for Minecraft",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist-win": "electron-builder --win",
+    "dist-mac": "electron-builder --mac",
+    "dist-linux": "electron-builder --linux"
+  },
+  "build": {
+    "asar": true,
+    "productName": "SkyLauncher",
+    "icon": "./assets/logo.png",
+    "files": [
+      "src/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.games"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Game"
+    }
+  },
+  "keywords": [
+    "minecraft",
+    "game",
+    "launcher",
+    "javascript",
+    "js",
+    "electron"
+  ],
+  "author": "SkyDonald",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/SkyDonald/DeezerRPC/issues"
+  },
+  "homepage": "https://github.com/SkyDonald/DeezerRPC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SkyDonald/DeezerRPC.git"
+  },
+  "dependencies": {
+    "discord-rpc": "^3.2.0",
+    "imgur-anonymous-uploader": "^1.1.0",
+    "minecraft-launcher-core": "^3.16.2",
+    "namemc": "^1.4.1",
+    "node-fetch": "^2.6.1"
+  },
+  "devDependencies": {
+    "electron": "^12.0.1",
+    "electron-builder": "^22.10.5",
+    "semistandard": "^16.0.0"
+  }
+}
