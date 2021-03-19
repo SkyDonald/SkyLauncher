@@ -9,6 +9,118 @@ const launcher = new MCLCClient();
 const RPC = new RPCClient({ transport: 'ipc' });
 RPC.login({ clientId: '819991168263258145' }).catch(() => {});
 const pkg = require('./../package.json');
+launcher.on('data', (i) => {
+  if (i.includes('Setting user: ')) {
+    mainWindow.webContents.send('info', `Game started as ${i.split('Setting user: ')[1]}`);
+    RPC.request('SET_ACTIVITY', {
+      pid: process.pid,
+      activity: {
+        details: 'Idling',
+        state: 'Minecraft',
+        assets: {
+          large_image: 'default',
+          large_text: `SkyLauncher v${pkg.version}`,
+          small_image: 'steve',
+          small_text: username || 'Unknow Player'
+        },
+        timestamps: {
+          start: new Date().getTime()
+        },
+        instance: true
+      }
+    });
+    // mainWindow.webContents.send('download-status', { type: 'null', current: 0, total: 0, name: 'null' });
+    // mainWindow.webContents.send('progress', { type: 'null', task: 0, total: 0 });
+  }
+  if (i.includes('Stopping!')) {
+    mainWindow.webContents.send('info', 'Game stopped');
+    RPC.request('SET_ACTIVITY', {
+      pid: process.pid,
+      activity: {
+        details: 'Idling',
+        state: `SkyLauncher v${pkg.version}`,
+        assets: {
+          large_image: 'default',
+          large_text: `SkyLauncher v${pkg.version}`,
+          small_image: 'steve',
+          small_text: username || 'Unknow Player'
+        },
+        timestamps: {
+          start: new Date().getTime()
+        },
+        instance: true
+      }
+    });
+  }
+  if (i.includes('Starting integrated minecraft server version')) {
+    const version = i.split('Starting integrated minecraft server version ')[1];
+    RPC.request('SET_ACTIVITY', {
+      pid: process.pid,
+      activity: {
+        details: 'Playing Singleplayer',
+        state: `Minecraft ${version}`,
+        assets: {
+          large_image: 'default',
+          large_text: `SkyLauncher v${pkg.version}`,
+          small_image: 'steve',
+          small_text: username || 'Unknow Player'
+        },
+        timestamps: {
+          start: new Date().getTime()
+        },
+        instance: true
+      }
+    });
+  }
+  if (i.includes('Connecting to')) {
+    const ip = i.split('Connecting to ')[1].split(',')[0];
+    RPC.request('SET_ACTIVITY', {
+      pid: process.pid,
+      activity: {
+        details: `Playing on ${ip}`,
+        state: 'Minecraft',
+        assets: {
+          large_image: 'default',
+          large_text: `SkyLauncher v${pkg.version}`,
+          small_image: 'steve',
+          small_text: username || 'Unknow Player'
+        },
+        timestamps: {
+          start: new Date().getTime()
+        },
+        instance: true
+      }
+    });
+  }
+
+  if (i.includes('Stopping singleplayer server as player logged out')) {
+    RPC.request('SET_ACTIVITY', {
+      pid: process.pid,
+      activity: {
+        details: 'Idling',
+        state: 'Minecraft',
+        assets: {
+          large_image: 'default',
+          large_text: `SkyLauncher v${pkg.version}`,
+          small_image: 'steve',
+          small_text: username || 'Unknow Player'
+        },
+        timestamps: {
+          start: new Date().getTime()
+        },
+        instance: true
+      }
+    });
+  }
+
+  // console.log('data', i);
+});
+launcher.on('download-status', (i) => {
+  mainWindow.webContents.send('download-status', i);
+});
+// launcher.on('progress', (i) => {
+//   mainWindow.webContents.send('progress', i);
+// });
 
 let mainWindow;
 let accessToken;
@@ -110,7 +222,7 @@ ipcMain.on('launch', async (_, { version, ram, username }) => {
   try {
     const opts = {
       clientPackage: null,
-      root: `C:${path.sep}Users${path.sep}${process.cwd().split(':\\')[1].split('\\')[1].split('\\')[0]}${path.sep}AppData${path.sep}Roaming${path.sep}.skylauncher`,
+      root: `${app.getPath('appData')}${path.sep}.skylauncher`,
       version,
       memory: {
         min: ram === 1 ? `${ram}G` : `${ram - 1}G`,
@@ -119,114 +231,6 @@ ipcMain.on('launch', async (_, { version, ram, username }) => {
       authorization: auth
     };
     launcher.launch(opts);
-
-    launcher.on('data', (i) => {
-      if (i.includes('Setting user: ')) {
-        mainWindow.webContents.send('info', `Game started as ${i.split('Setting user: ')[1]}`);
-        RPC.request('SET_ACTIVITY', {
-          pid: process.pid,
-          activity: {
-            details: 'Idling',
-            state: 'Minecraft',
-            assets: {
-              large_image: 'default',
-              large_text: `SkyLauncher v${pkg.version}`,
-              small_image: 'steve',
-              small_text: username || 'Unknow Player'
-            },
-            timestamps: {
-              start: new Date().getTime()
-            },
-            instance: true
-          }
-        });
-      }
-      if (i.includes('Stopping!')) {
-        mainWindow.webContents.send('info', 'Game stopped');
-        RPC.request('SET_ACTIVITY', {
-          pid: process.pid,
-          activity: {
-            details: 'Idling',
-            state: `SkyLauncher v${pkg.version}`,
-            assets: {
-              large_image: 'default',
-              large_text: `SkyLauncher v${pkg.version}`,
-              small_image: 'steve',
-              small_text: username || 'Unknow Player'
-            },
-            timestamps: {
-              start: new Date().getTime()
-            },
-            instance: true
-          }
-        });
-      }
-      if (i.includes('Starting integrated minecraft server version')) {
-        const version = i.split('Starting integrated minecraft server version ')[1];
-        RPC.request('SET_ACTIVITY', {
-          pid: process.pid,
-          activity: {
-            details: 'Playing Singleplayer',
-            state: `Minecraft ${version}`,
-            assets: {
-              large_image: 'default',
-              large_text: `SkyLauncher v${pkg.version}`,
-              small_image: 'steve',
-              small_text: username || 'Unknow Player'
-            },
-            timestamps: {
-              start: new Date().getTime()
-            },
-            instance: true
-          }
-        });
-      }
-      if (i.includes('Connecting to')) {
-        const ip = i.split('Connecting to ')[1].split(',')[0];
-        RPC.request('SET_ACTIVITY', {
-          pid: process.pid,
-          activity: {
-            details: `Playing on ${ip}`,
-            state: 'Minecraft',
-            assets: {
-              large_image: 'default',
-              large_text: `SkyLauncher v${pkg.version}`,
-              small_image: 'steve',
-              small_text: username || 'Unknow Player'
-            },
-            timestamps: {
-              start: new Date().getTime()
-            },
-            instance: true
-          }
-        });
-      }
-
-      if (i.includes('Stopping singleplayer server as player logged out')) {
-        RPC.request('SET_ACTIVITY', {
-          pid: process.pid,
-          activity: {
-            details: 'Idling',
-            state: 'Minecraft',
-            assets: {
-              large_image: 'default',
-              large_text: `SkyLauncher v${pkg.version}`,
-              small_image: 'steve',
-              small_text: username || 'Unknow Player'
-            },
-            timestamps: {
-              start: new Date().getTime()
-            },
-            instance: true
-          }
-        });
-      }
-
-      console.log('data', i);
-    });
-    launcher.on('download-status', (i) => {
-      mainWindow.webContents.send('download-status', i);
-    });
   } catch (err) {
     console.error(err);
     mainWindow.webContents.send('error', err.message);

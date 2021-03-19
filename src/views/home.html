@@ -163,6 +163,20 @@
         }
       });
 
+      window.api.receive('progress', (_, i) => {
+        document.querySelector('#text-download').style.display = '';
+        document.querySelector('.progress').style.display = 'flex';
+        playbtn.disabled = true;
+        const percent = Math.round((i.task * 100) / i.total);
+        document.getElementById('text-download').innerHTML = `Downloading ${i.type} (${percent}%)`;
+        document.querySelector('.progress-value').style.width = `${percent}%`;
+        if (i.task === i.total) {
+          document.querySelector('#text-download').style.display = 'none';
+          document.querySelector('.progress').style.display = 'none';
+          playbtn.disabled = false;
+        }
+      });
+
       const playbtn = document.getElementById('playbtn');
       playbtn.addEventListener('click', () => {
         const versions = JSON.parse(sessionStorage.getItem('versionsData'));
@@ -192,6 +206,8 @@
 
       window.api.receive('info', (_, message) => {
         if (message.includes('Game started as')) {
+          document.querySelector('#text-download').style.display = 'none';
+          document.querySelector('.progress').style.display = 'none';
           playbtn.disabled = false;
         }
         iziToast.info({
